@@ -122,6 +122,20 @@
                                 <i class="fa fa-envelope"></i> Send Test Email</button>
                         </span>
                     </div>
+
+                    <!---WIP: add blocked/allowed hosts to avoid sandboxes-->
+                    <label class="control-label" for="allowed-cidrs">Allowed CIDRs:</label>
+                    <textarea class="form-control" id="allowed-cidrs" multiple="multiple"></textarea>
+                    <label class="control-label" for="blocked-cidrs">Blocked CIDRs:</label>
+                    <textarea class="form-control" id="blocked-cidrs" multiple="multiple"></textarea>
+                    <!---
+                    <label class="control-label" for="allowed-geo-cidrs">Allowed Countries:</label>
+                    <select class="form-control" id="allowed-geo-cidrs" multiple="multiple"></select>
+                    <label class="control-label" for="blocked-geo-cidrs">Blocked Countries:</label>
+                    <select class="form-control" id="blocked-geo-cidrs" multiple="multiple"></select>
+                    -->
+                    <!---END WIP-->
+
                     <label class="control-label" for="users">Groups:</label>
                     <select class="form-control" id="users" multiple="multiple"></select>
                 </div>
@@ -175,5 +189,5 @@
     </div>
 </div>
 {{end}} {{define "scripts"}}
-<script src="/js/dist/app/campaigns.min.js"></script>
+<script src="/js/src/app/campaigns.js"></script>
 {{end}}

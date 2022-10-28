@@ -300,6 +300,7 @@ function replay(event_idx) {
  * 
  */
 var renderDevice = function (event_details) {
+    var remote_addr = details.browser.address;
     var ua = UAParser(details.browser['user-agent'])
     var detailsString = '<div class="timeline-device-details">'
 
@@ -332,11 +333,14 @@ var renderDevice = function (event_details) {
     if (ua.os.version) {
         deviceName = deviceName + ' (OS Version: ' + ua.os.version + ')'
     }
+    
 
     deviceString = '<div class="timeline-device-os"><span class="fa fa-stack">' +
         '<i class="fa fa-' + escapeHtml(deviceIcon) + ' fa-stack-2x"></i>' +
         '<i class="fa fa-vendor-icon fa-' + escapeHtml(deviceVendor) + ' fa-stack-1x"></i>' +
-        '</span> ' + escapeHtml(deviceName) + '</div>'
+        '</span> ' + escapeHtml(deviceName) + 
+        ' ('+ escapeHtml(remote_addr) +')' +
+        '</div>'
 
     detailsString += deviceString
 

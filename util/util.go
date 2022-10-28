@@ -12,6 +12,7 @@ import (
 	"io"
 	"io/ioutil"
 	"math/big"
+	"net"
 	"net/http"
 	"net/mail"
 	"os"
@@ -29,6 +30,54 @@ var (
 	emailRegex     = regexp.MustCompile(`(?i)email`)
 	positionRegex  = regexp.MustCompile(`(?i)position`)
 )
+
+// WIP
+// Explode CIDR to list of IPs
+func IPinCIDR(addr, cidr string) (bool, error) {
+	all_ips, err := explodeCIDR(cidr)
+	if err != nil {
+		return false, err
+	}
+
+	for _, ip := range all_ips {
+		if addr == ip {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func explodeCIDR(cidr string) ([]string, error) {
+	ip, ipnet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return nil, err
+	}
+
+	var ips []string
+	for ip := ip.Mask(ipnet.Mask); ipnet.Contains(ip); inc(ip) {
+		ips = append(ips, ip.String())
+	}
+
+	// remove network address and broadcast address
+	if len(ips) > 1 {
+		return ips[1 : len(ips)-1], nil
+	}
+
+	return ips, nil // for single address edge case (/32)
+}
+
+// http://play.golang.org/p/m8TNTtygK0
+func inc(ip net.IP) {
+	for j := len(ip) - 1; j >= 0; j-- {
+		ip[j]++
+		if ip[j] > 0 {
+			break
+		}
+	}
+}
+
+// END WIP
 
 // ParseMail takes in an HTTP Request and returns an Email object
 // TODO: This function will likely be changed to take in a []byte

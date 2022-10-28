@@ -233,6 +233,61 @@ func (ps *PhishingServer) PhishHandler(w http.ResponseWriter, r *http.Request) {
 	c := ctx.Get(r, "campaign").(models.Campaign)
 	d := ctx.Get(r, "details").(models.EventDetails)
 
+	//WIP check if in allowlist/blocklist
+	allowedCIDRs := strings.Split(strings.ReplaceAll(c.AllowedCIDRs, " ", ""), ",")
+	blockedCIDRs := strings.Split(strings.ReplaceAll(c.BlockedCIDRs, " ", ""), ",")
+	//mmdb, err := maxminddb.Open("static/db/geolite2-city.mmdb")... Lookup...and get city Long/Lat
+	//allowedCountries := c.AllowedCountries
+	//blockedCountries := c.AllowedCountries
+
+	if len(blockedCIDRs) > 0 {
+		for _, cidr := range blockedCIDRs {
+			res, err := util.IPinCIDR(rs.IP, cidr)
+			if err != nil {
+				log.Error(err)
+				http.NotFound(w, r)
+				return
+			}
+			if res {
+				// Is in block list -> BLOCK.
+				log.Warn(rs.IP, " is in blocklist. Blocked.")
+				http.NotFound(w, r)
+				return
+			}
+		}
+	}
+	/*
+		if len(blockedCountries) > 0 {
+			for _, country := range blockedCIDRs {
+
+			}
+		}
+	*/
+	if len(allowedCIDRs) > 0 {
+		for _, cidr := range allowedCIDRs {
+			res, err := util.IPinCIDR(rs.IP, cidr)
+			if err != nil {
+				log.Error(err)
+				http.NotFound(w, r)
+				return
+			}
+			if !res {
+				// Is not in allow list -> BLOCK.
+				log.Warn(rs.IP, " is not in allowlist. Blocked.")
+				http.NotFound(w, r)
+				return
+			}
+		}
+	}
+	/*
+		if len(allowedCountries) > 0 {
+			for _, country := range blockedCIDRs {
+
+			}
+		}
+	*/
+	//END WIP
+
 	// Check for a transparency request
 	if strings.HasSuffix(rid, TransparencySuffix) {
 		ps.TransparencyHandler(w, r)
@@ -354,6 +409,10 @@ func setupContext(r *http.Request) (*http.Request, error) {
 		log.Error(err)
 		return r, err
 	}
+	//WIP sandbox evasion
+
+	//END WIP
+
 	// Don't process events for completed campaigns
 	if c.Status == models.CampaignComplete {
 		return r, ErrCampaignComplete

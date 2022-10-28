@@ -31,6 +31,20 @@ type Campaign struct {
 	SMTPId        int64     `json:"-"`
 	SMTP          SMTP      `json:"smtp"`
 	URL           string    `json:"url"`
+
+	//WIP
+	AllowedCIDRs     string `json:"allowed_cidrs,omitempty" gorm:"column:allowed_cidr"` //TODO: should be list of strings instead
+	BlockedCIDRs     string `json:"blocked_cidrs,omitempty" gorm:"column:blocked_cidr"` //TODO: should be list of strings instead
+	AllowedCountries string `json:"allowed_countries,omitempty"`                        //TODO: should be list of strings instead
+	BlockedCountries string `json:"blocked_countries,omitempty"`                        //TODO: should be list of strings instead
+
+	/*
+			ALTER TABLE campaigns ADD COLUMN allowed_cidr text;
+			ALTER TABLE campaigns ADD COLUMN blocked_cidr text;
+			ALTER TABLE campaigns ADD COLUMN allowed_countries text;
+			ALTER TABLE campaigns ADD COLUMN blocked_countries text;
+		END WIP
+	*/
 }
 
 // CampaignResults is a struct representing the results from a campaign
@@ -69,6 +83,7 @@ type CampaignStats struct {
 	SubmittedData int64 `json:"submitted_data"`
 	EmailReported int64 `json:"email_reported"`
 	Error         int64 `json:"error"`
+	//WIP ADD "BLOCKED" sandboxes
 }
 
 // Event contains the fields for an event
@@ -526,6 +541,14 @@ func PostCampaign(c *Campaign, uid int64) error {
 	}
 	c.SMTP = s
 	c.SMTPId = s.Id
+	// WIP: add allowed_ips, blocked_ips
+	log.Info(c)
+	//c.AllowedCIDRs =
+	//	c.BlockedCIDRs
+	//c.AllowedCountries
+	//c.BlockedCountries
+	//END WIP
+
 	// Insert into the DB
 	err = db.Save(c).Error
 	if err != nil {
@@ -609,7 +632,7 @@ func PostCampaign(c *Campaign, uid int64) error {
 	return tx.Commit().Error
 }
 
-//DeleteCampaign deletes the specified campaign
+// DeleteCampaign deletes the specified campaign
 func DeleteCampaign(id int64) error {
 	log.WithFields(logrus.Fields{
 		"campaign_id": id,

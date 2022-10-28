@@ -51,6 +51,11 @@ function launch() {
                     },
                     launch_date: moment($("#launch_date").val(), "MMMM Do YYYY, h:mm a").utc().format(),
                     send_by_date: send_by_date || null,
+                    allowed_cidrs: $("#allowed-cidrs").val(),//.replace(/ /g,'').split(","),
+                    blocked_cidrs: $("#blocked-cidrs").val(),//.replace(/ /g,'').split(","),
+                    //allowed_countries: $("#allowed-geo-cidrs").val(),
+                    //blocked_countries: $("#blocked-geo-cidrs").val(),
+                    
                     groups: groups,
                 }
                 // Submit the campaign
@@ -162,6 +167,20 @@ function deleteCampaign(idx) {
 }
 
 function setupOptions() {
+    //WIP: to avoid sandboxes
+    /*
+    $("#allowed-geo-ips.form-control").select2({
+        placeholder: "Select Allowed Country Origins",
+        data: ["US", "UK", "IT"],
+    });
+
+    $("#blocked-geo-ips.form-control").select2({
+        placeholder: "Select Blocked Country Origins",
+        data: ["US", "UK", "IT"],
+    });
+    */
+    //END WIP
+
     api.groups.summary()
         .success(function (summaries) {
             groups = summaries.groups

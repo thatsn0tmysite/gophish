@@ -27,6 +27,7 @@ func (as *Server) Campaigns(w http.ResponseWriter, r *http.Request) {
 		c := models.Campaign{}
 		// Put the request into a campaign
 		err := json.NewDecoder(r.Body).Decode(&c)
+		log.Error(c, r.Body)
 		if err != nil {
 			JSONResponse(w, models.Response{Success: false, Message: "Invalid JSON structure"}, http.StatusBadRequest)
 			return
