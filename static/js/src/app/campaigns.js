@@ -53,8 +53,8 @@ function launch() {
                     send_by_date: send_by_date || null,
                     allowed_cidrs: $("#allowed-cidrs").val(),//.replace(/ /g,'').split(","),
                     blocked_cidrs: $("#blocked-cidrs").val(),//.replace(/ /g,'').split(","),
-                    //allowed_countries: $("#allowed-geo-cidrs").val(),
-                    //blocked_countries: $("#blocked-geo-cidrs").val(),
+                    allowed_countries: $("#allowed-geo-cidrs").val(),
+                    blocked_countries: $("#blocked-geo-cidrs").val(),
                     
                     groups: groups,
                 }

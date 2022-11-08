@@ -20,6 +20,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/jordan-wright/unindexed"
+	"github.com/oschwald/maxminddb-golang"
 )
 
 // ErrInvalidRequest is thrown when a request with an invalid structure is
@@ -234,12 +235,54 @@ func (ps *PhishingServer) PhishHandler(w http.ResponseWriter, r *http.Request) {
 	d := ctx.Get(r, "details").(models.EventDetails)
 
 	//WIP check if in allowlist/blocklist
-	allowedCIDRs := strings.Split(strings.ReplaceAll(c.AllowedCIDRs, " ", ""), ",")
-	blockedCIDRs := strings.Split(strings.ReplaceAll(c.BlockedCIDRs, " ", ""), ",")
-	//mmdb, err := maxminddb.Open("static/db/geolite2-city.mmdb")... Lookup...and get city Long/Lat
-	//allowedCountries := c.AllowedCountries
-	//blockedCountries := c.AllowedCountries
+	
+	var allowedCIDRs, blockedCIDRs []string
+	var allowedCountries, blockedCountries []string
 
+	if len(c.AllowedCIDRs) > 0 {
+		allowedCIDRs = strings.Split(strings.ReplaceAll(c.AllowedCIDRs, " ", ""), ",")
+	}
+
+	if len(c.BlockedCIDRs) > 0 {
+		blockedCIDRs = strings.Split(strings.ReplaceAll(c.BlockedCIDRs, " ", ""), ",")
+	}
+
+	//mmdb, err := maxminddb.Open("static/db/geolite2-city.mmdb")... Lookup...and get city Long/Lat
+	mmdb, err := maxminddb.Open("static/db/geolite2-city.mmdb")
+	if err != nil {
+		log.Error(err)
+		http.NotFound(w, r)
+		return
+	}
+	var geoip_record struct {
+		Country struct {
+			ISOCode string `maxminddb:"iso_code"`
+		} `maxminddb:"country"`
+	}
+	ip := net.ParseIP(rs.IP)
+	err = mmdb.Lookup(ip, &geoip_record)
+	log.Error("ISOCODE:", geoip_record.Country.ISOCode)
+	if err != nil {
+		log.Error(err)
+		http.NotFound(w, r)
+		return
+	}
+
+	if len(c.AllowedCountries) > 0 {
+		allowedCountries = strings.Split(strings.ReplaceAll(c.AllowedCountries, " ", ""), ",")
+	}
+
+	if len(c.BlockedCountries) > 0 {
+		blockedCountries = strings.Split(strings.ReplaceAll(c.BlockedCountries, " ", ""), ",")
+	}
+
+
+	log.Error("AllowedCIDRs:", allowedCIDRs)
+	log.Error("BlockedCIDRs:", blockedCIDRs)
+	log.Error("AllowedGEO:", allowedCountries)
+	log.Error("BlockedGEO:", blockedCountries)
+	log.Error("LenAllowedCIDRs:", len(allowedCIDRs))
+	log.Error("LenBlockedCIDRs:", len(blockedCIDRs))
 	if len(blockedCIDRs) > 0 {
 		for _, cidr := range blockedCIDRs {
 			res, err := util.IPinCIDR(rs.IP, cidr)
@@ -256,13 +299,18 @@ func (ps *PhishingServer) PhishHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	/*
-		if len(blockedCountries) > 0 {
-			for _, country := range blockedCIDRs {
 
+	if len(blockedCountries) > 0 {
+		for _, country := range blockedCountries {
+			if strings.ToUpper(country) == geoip_record.Country.ISOCode {
+				// Is in geo blocklist -> BLOCK
+				log.Warn(rs.IP, " is in geo blocklist. Blocked.")
+				http.NotFound(w, r)
+				return
 			}
 		}
-	*/
+	}
+
 	if len(allowedCIDRs) > 0 {
 		for _, cidr := range allowedCIDRs {
 			res, err := util.IPinCIDR(rs.IP, cidr)
@@ -271,7 +319,11 @@ func (ps *PhishingServer) PhishHandler(w http.ResponseWriter, r *http.Request) {
 				http.NotFound(w, r)
 				return
 			}
-			if !res {
+			log.Error("CIDR:", cidr)
+			log.Error("RemoteIP:", rs.IP)
+			log.Error("Is in CIDR:", res)
+			if res == false {
+				log.Error("RES=",res)
 				// Is not in allow list -> BLOCK.
 				log.Warn(rs.IP, " is not in allowlist. Blocked.")
 				http.NotFound(w, r)
@@ -279,13 +331,18 @@ func (ps *PhishingServer) PhishHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	/*
-		if len(allowedCountries) > 0 {
-			for _, country := range blockedCIDRs {
 
-			}
+	
+	if len(allowedCountries) > 0 {
+		res := util.IsInList(geoip_record.Country.ISOCode, allowedCountries)
+		if res == false {
+			// Is not in allow list -> BLOCK.
+			log.Warn(rs.IP, " is not in geo allowlist. Blocked.")
+			http.NotFound(w, r)
+			return
 		}
-	*/
+	}
+	
 	//END WIP
 
 	// Check for a transparency request

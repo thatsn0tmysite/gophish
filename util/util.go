@@ -33,6 +33,15 @@ var (
 
 // WIP
 // Explode CIDR to list of IPs
+func IsInList(str string, lst []string) bool {
+	for _, item := range lst {
+		if item == str {
+			return true
+		}
+	}
+	return false
+}
+
 func IPinCIDR(addr, cidr string) (bool, error) {
 	all_ips, err := explodeCIDR(cidr)
 	if err != nil {
